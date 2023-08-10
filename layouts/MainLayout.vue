@@ -5,7 +5,7 @@
         class="flex items-center justify-center text-xs text-[#333333] font-light px-2 h-10 bg-[#FAFAFA] max-w-[1200px]"
       >
         <li class="border-r border-r-gray-400 px-3 hover:text-[#FF4646] cursor-pointer">
-          Sell on EcomExpess
+          Sell on Xpress
         </li>
         <li class="border-r border-r-gray-400 px-3 hover:text-[#FF4646] cursor-pointer">
           Cookie Prefrences
@@ -39,7 +39,7 @@
             class="absolute bg-white w-[220px] text-[#333333] z-40 top-[38px] -left-[100px] border-x border-b"
           >
             <div v-if="true">
-              <div class="text-semibold text-[15px] my-4 px-3">Welcome to EcomXpress</div>
+              <div class="text-semibold text-[15px] my-4 px-3">Welcome to Xpress</div>
               <div class="flex items-center gap-1 px-3 mb-3">
                 <NuxtLink
                   to="/auth"
@@ -135,6 +135,7 @@
               </div>
             </button>
           </NuxtLink>
+
           <button
             @click="userStore.isMenuOverlay = true"
             class="md:hidden block rounded-full p-1.5 -mt-[4px] hover:bg-gray-200"

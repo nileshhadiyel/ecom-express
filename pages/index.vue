@@ -83,19 +83,5 @@ const products = [
     url: "https://picsum.photos/id/10/800/800",
     price: 9999,
   },
-  {
-    id: 4,
-    title: "Title 1",
-    description: "This is a description",
-    url: "https://picsum.photos/id/12/800/800",
-    price: 9999,
-  },
-  {
-    id: 5,
-    title: "Title 1",
-    description: "This is a description",
-    url: "https://picsum.photos/id/22/800/800",
-    price: 9999,
-  },
 ];
 </script>
