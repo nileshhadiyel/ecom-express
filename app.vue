@@ -10,11 +10,12 @@
 </template>
 <script setup>
 import { useUserStore } from '~/stores/user';
+import MenuOverlay from '~/components/MenuOverlay.vue';
 const userStore = useUserStore()
 
 const route = useRoute()
 
-let window = ref(process.client ? window.innerWidth : '')
+let windowWidth = ref(process.client ? window.innerWidth : '')
 
 onMounted(() => {
   userStore.isLoading = true
@@ -30,6 +31,6 @@ watch(() => windowWidth.value, () => {
 })
 
 watch(() => route.fullPath, () => {
-  userStore.isLoading = true
+  userStore.isLoading = true 
 })
 </script>
