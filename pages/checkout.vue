@@ -5,7 +5,7 @@
         <div class="md:w-[65%]">
           <div class="bg-white rounded-lg p-4">
             <div class="text-xl font-semibold mb-2">Shipping Address</div>
-            <div v-if="false">
+            <div v-if="currentAddress && currentAddress.data">
               <NuxtLink
                 to="/address"
                 class="flex items-center pb-2 text-blue-500 hover:text-red-400"
@@ -15,11 +15,29 @@
               </NuxtLink>
 
               <div class="pt-2 border-t">
-                <div class="underline pb-1">Delivery Address</div>
+                <div class="underlcurrentAddress.data.name}}ine pb-1">
+                  Delivery Address
+                </div>
                 <ul class="flex items-center gap-2">
                   <li class="flex items-center gap-2">
                     <div>Contact Number</div>
-                    <div class="font-bold">Test</div>
+                    <div class="font-bold">{{ currentAddress.data.name }}</div>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <div>Address:</div>
+                    <div class="font-bold">{{ currentAddress.data.address }}</div>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <div>Zip Code:</div>
+                    <div class="font-bold">{{ currentAddress.data.zipcode }}</div>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <div>City:</div>
+                    <div class="font-bold">{{ currentAddress.data.city }}</div>
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <div>Country:</div>
+                    <div class="font-bold">{{ currentAddress.data.country }}</div>
                   </li>
                 </ul>
               </div>
@@ -36,7 +54,7 @@
           </div>
 
           <div id="items" class="bg-white rounded-lg p-4 mt-4">
-            <div v-for="product in products">
+            <div v-for="product in userStore.checkout">
               <CheckoutItem :product="product" />
             </div>
           </div>
@@ -105,6 +123,27 @@ let clientSecret = null;
 let currentAddress = ref(null);
 let isProcessing = ref(false);
 
+onBeforeMount(async () => {
+  if (userStore.checkout.length < 1) {
+    return navigateTo("/shoppingCart");
+  }
+
+  total.value = 0.0;
+
+  if (userStore.value) {
+    currentAddress.value = await useFetch(
+      `/api/prisma/get-address-by-user/${user.value.id}`
+    );
+    setTimeout(() => (useStorage.isLoading = false), 200);
+  }
+});
+
+watchEffect(() => {
+  if (route.fullPath == "/checkout" && !user.value) {
+    return navigateTo("/auth");
+  }
+});
+
 onMounted(() => {
   isProcessing.vale = true;
 
@@ -129,21 +168,4 @@ const pay = async () => {};
 const createOrder = async (stripId) => {};
 
 const showError = (errorMsgText) => {};
-
-const products = [
-  {
-    id: 1,
-    title: "Title 1",
-    description: "This is a description",
-    url: "https://picsum.photos/id/88/800/800",
-    price: 9999,
-  },
-  {
-    id: 2,
-    title: "Title 1",
-    description: "This is a description",
-    url: "https://picsum.photos/id/28/800/800",
-    price: 9999,
-  },
-];
 </script>
