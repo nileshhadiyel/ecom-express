@@ -1,10 +1,11 @@
 <template>
   <MainLayout>
-    <div class="mt-4 max-w-[1200px] mx-auto px-2">
+    <div id="CheckoutPage" class="mt-4 max-w-[1200px] mx-auto px-2">
       <div class="md:flex gap-4 justify-between mx-auto w-full">
         <div class="md:w-[65%]">
           <div class="bg-white rounded-lg p-4">
             <div class="text-xl font-semibold mb-2">Shipping Address</div>
+
             <div v-if="currentAddress && currentAddress.data">
               <NuxtLink
                 to="/address"
@@ -15,12 +16,10 @@
               </NuxtLink>
 
               <div class="pt-2 border-t">
-                <div class="underlcurrentAddress.data.name}}ine pb-1">
-                  Delivery Address
-                </div>
-                <ul class="flex items-center gap-2">
+                <div class="underline pb-1">Delivery Address</div>
+                <ul class="text-xs">
                   <li class="flex items-center gap-2">
-                    <div>Contact Number</div>
+                    <div>Contact name:</div>
                     <div class="font-bold">{{ currentAddress.data.name }}</div>
                   </li>
                   <li class="flex items-center gap-2">
@@ -53,20 +52,21 @@
             </NuxtLink>
           </div>
 
-          <div id="items" class="bg-white rounded-lg p-4 mt-4">
+          <div id="Items" class="bg-white rounded-lg p-4 mt-4">
             <div v-for="product in userStore.checkout">
               <CheckoutItem :product="product" />
             </div>
           </div>
         </div>
+
         <div class="md:hidden block my-4" />
         <div class="md:w-[35%]">
-          <div class="bg-white rounded-lg p-4">
+          <div id="PlaceOrder" class="bg-white rounded-lg p-4">
             <div class="text-2xl font-extrabold mb-2">Summary</div>
 
             <div class="flex items-center justify-between my-4">
-              <div>Total Shipping</div>
-              <div>Free</div>
+              <div class="">Total Shipping</div>
+              <div class="">Free</div>
             </div>
 
             <div class="border-t" />
@@ -98,6 +98,7 @@
               </button>
             </form>
           </div>
+
           <div class="bg-white rounded-lg p-4 mt-4">
             <div class="text-lg font-semibold mb-2 mt-2">AliExpress</div>
             <p class="my-2">AliExpress keeps your information and payment safe</p>
@@ -110,9 +111,12 @@
 
 <script setup>
 import MainLayout from "~/layouts/MainLayout.vue";
-import { useUserStore } from "~/stores/user.js";
+import { useUserStore } from "~/stores/user";
 const userStore = useUserStore();
+const user = useSupabaseUser();
 const route = useRoute();
+
+definePageMeta({ middleware: "auth" });
 
 let stripe = null;
 let elements = null;
@@ -125,16 +129,15 @@ let isProcessing = ref(false);
 
 onBeforeMount(async () => {
   if (userStore.checkout.length < 1) {
-    return navigateTo("/shoppingCart");
+    return navigateTo("/shoppingcart");
   }
 
   total.value = 0.0;
-
-  if (userStore.value) {
+  if (user.value) {
     currentAddress.value = await useFetch(
       `/api/prisma/get-address-by-user/${user.value.id}`
     );
-    setTimeout(() => (useStorage.isLoading = false), 200);
+    setTimeout(() => (userStore.isLoading = false), 200);
   }
 });
 
@@ -144,8 +147,8 @@ watchEffect(() => {
   }
 });
 
-onMounted(() => {
-  isProcessing.vale = true;
+onMounted(async () => {
+  isProcessing.value = true;
 
   userStore.checkout.forEach((item) => {
     total.value += item.price;
@@ -161,11 +164,93 @@ watch(
   }
 );
 
-const stripeInit = async () => {};
+const stripeInit = async () => {
+  const runtimeConfig = useRuntimeConfig();
+  stripe = Stripe(runtimeConfig.stripePk);
 
-const pay = async () => {};
+  let res = await $fetch("/api/stripe/paymentintent", {
+    method: "POST",
+    body: {
+      amount: total.value,
+    },
+  });
+  clientSecret = res.client_secret;
 
-const createOrder = async (stripId) => {};
+  elements = stripe.elements();
+  var style = {
+    base: {
+      fontSize: "18px",
+    },
+    invalid: {
+      fontFamily: "Arial, sans-serif",
+      color: "#EE4B2B",
+      iconColor: "#EE4B2B",
+    },
+  };
+  card = elements.create("card", {
+    hidePostalCode: true,
+    style: style,
+  });
 
-const showError = (errorMsgText) => {};
+  // Stripe injects an iframe into the DOM
+  card.mount("#card-element");
+  card.on("change", function (event) {
+    // Disable the Pay button if there are no card details in the Element
+    document.querySelector("button").disabled = event.empty;
+    document.querySelector("#card-error").textContent = event.error
+      ? event.error.message
+      : "";
+  });
+
+  isProcessing.value = false;
+};
+
+const pay = async () => {
+  if (currentAddress.value && currentAddress.value.data == "") {
+    showError("Please add shipping address");
+    return;
+  }
+  isProcessing.value = true;
+
+  let result = await stripe.confirmCardPayment(clientSecret, {
+    payment_method: { card: card },
+  });
+
+  if (result.error) {
+    showError(result.error.message);
+    isProcessing.value = false;
+  } else {
+    await createOrder(result.paymentIntent.id);
+    userStore.cart = [];
+    userStore.checkout = [];
+    setTimeout(() => {
+      return navigateTo("/success");
+    }, 500);
+  }
+};
+
+const createOrder = async (stripeId) => {
+  await useFetch("/api/prisma/create-order", {
+    method: "POST",
+    body: {
+      userId: user.value.id,
+      stripeId: stripeId,
+      name: currentAddress.value.data.name,
+      address: currentAddress.value.data.address,
+      zipcode: currentAddress.value.data.zipcode,
+      city: currentAddress.value.data.city,
+      country: currentAddress.value.data.country,
+      products: userStore.checkout,
+    },
+  });
+};
+
+const showError = (errorMsgText) => {
+  let errorMsg = document.querySelector("#card-error");
+
+  errorMsg.textContent = errorMsgText;
+  setTimeout(() => {
+    errorMsg.textContent = "";
+  }, 4000);
+};
 </script>

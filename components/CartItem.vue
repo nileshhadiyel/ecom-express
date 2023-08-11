@@ -64,7 +64,7 @@ import { useUserStore } from "~/stores/user";
 const userStore = useUserStore();
 
 const props = defineProps(["product", "selectedArray"]);
-const { products, selectedArray } = toRefs(props);
+const { product, selectedArray } = toRefs(props);
 
 const emit = defineEmits(["selectedRadio"]);
 
@@ -73,7 +73,7 @@ let isSelected = ref(false);
 
 const removeFromCart = () => {
   userStore.cart.forEach((prod, index) => {
-    if (prod.id === products.value.id) {
+    if (prod.id === product.value.id) {
       userStore.cart.splice(index, 1);
     }
   });
